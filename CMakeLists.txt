@@ -284,21 +284,21 @@ endif()
 endif() # HWY_SYSTEM_GTEST
 
 set(HWY_TEST_FILES
-  hwy/contrib/image/image_test.cc
+  # hwy/contrib/image/image_test.cc
   # hwy/contrib/math/math_test.cc
   hwy/aligned_allocator_test.cc
   hwy/base_test.cc
   hwy/highway_test.cc
   hwy/targets_test.cc
   hwy/examples/skeleton_test.cc
-  hwy/tests/arithmetic_test.cc
-  hwy/tests/combine_test.cc
-  hwy/tests/compare_test.cc
-  hwy/tests/convert_test.cc
-  hwy/tests/logical_test.cc
+  # hwy/tests/arithmetic_test.cc
+  # hwy/tests/combine_test.cc
+  # hwy/tests/compare_test.cc
+  # hwy/tests/convert_test.cc
+  # hwy/tests/logical_test.cc
   hwy/tests/memory_test.cc
-  hwy/tests/swizzle_test.cc
-  hwy/tests/test_util_test.cc
+  # hwy/tests/swizzle_test.cc
+  # hwy/tests/test_util_test.cc
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests)

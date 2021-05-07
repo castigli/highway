@@ -47,21 +47,21 @@ using TFromV = TFromD<DFromV<V>>;
 namespace detail {  // for code folding
 
 // Unsigned:
-#define HWY_SVE_FOREACH_U08(X_MACRO, NAME, OP) X_MACRO(uint, u, 8, NAME, OP)
-#define HWY_SVE_FOREACH_U16(X_MACRO, NAME, OP) X_MACRO(uint, u, 16, NAME, OP)
-#define HWY_SVE_FOREACH_U32(X_MACRO, NAME, OP) X_MACRO(uint, u, 32, NAME, OP)
-#define HWY_SVE_FOREACH_U64(X_MACRO, NAME, OP) X_MACRO(uint, u, 64, NAME, OP)
+#define HWY_SVE_FOREACH_U08(X_MACRO, NAME, OP) X_MACRO(uint, u, 8, b, NAME, OP)
+#define HWY_SVE_FOREACH_U16(X_MACRO, NAME, OP) X_MACRO(uint, u, 16, h, NAME, OP)
+#define HWY_SVE_FOREACH_U32(X_MACRO, NAME, OP) X_MACRO(uint, u, 32, w, NAME, OP)
+#define HWY_SVE_FOREACH_U64(X_MACRO, NAME, OP) X_MACRO(uint, u, 64, d, NAME, OP)
 
 // Signed:
-#define HWY_SVE_FOREACH_I08(X_MACRO, NAME, OP) X_MACRO(int, i, 8, NAME, OP)
-#define HWY_SVE_FOREACH_I16(X_MACRO, NAME, OP) X_MACRO(int, i, 16, NAME, OP)
-#define HWY_SVE_FOREACH_I32(X_MACRO, NAME, OP) X_MACRO(int, i, 32, NAME, OP)
-#define HWY_SVE_FOREACH_I64(X_MACRO, NAME, OP) X_MACRO(int, i, 64, NAME, OP)
+#define HWY_SVE_FOREACH_I08(X_MACRO, NAME, OP) X_MACRO(int, s, 8, b, NAME, OP)
+#define HWY_SVE_FOREACH_I16(X_MACRO, NAME, OP) X_MACRO(int, s, 16, h, NAME, OP)
+#define HWY_SVE_FOREACH_I32(X_MACRO, NAME, OP) X_MACRO(int, s, 32, w, NAME, OP)
+#define HWY_SVE_FOREACH_I64(X_MACRO, NAME, OP) X_MACRO(int, s, 64, d, NAME, OP)
 
 // Float:
-#define HWY_SVE_FOREACH_F16(X_MACRO, NAME, OP) X_MACRO(float, f, 16, NAME, OP)
-#define HWY_SVE_FOREACH_F32(X_MACRO, NAME, OP) X_MACRO(float, f, 32, NAME, OP)
-#define HWY_SVE_FOREACH_F64(X_MACRO, NAME, OP) X_MACRO(float, f, 64, NAME, OP)
+#define HWY_SVE_FOREACH_F16(X_MACRO, NAME, OP) X_MACRO(float, f, 16, h, NAME, OP)
+#define HWY_SVE_FOREACH_F32(X_MACRO, NAME, OP) X_MACRO(float, f, 32, w, NAME, OP)
+#define HWY_SVE_FOREACH_F64(X_MACRO, NAME, OP) X_MACRO(float, f, 64, d, NAME, OP)
 
 // For all element sizes:
 #define HWY_SVE_FOREACH_U(X_MACRO, NAME, OP) \
@@ -113,7 +113,7 @@ namespace detail {  // for code folding
 
 // TODO(janwas): remove typedefs and only use HWY_SVE_V etc. directly
 
-#define HWY_SPECIALIZE(BASE, CHAR, BITS, NAME, OP)                   \
+#define HWY_SPECIALIZE(BASE, CHAR, BITS, SUFF, NAME, OP)                   \
   using HWY_SVE_D(CHAR, BITS) =                                      \
       Simd<HWY_SVE_T(BASE, BITS), HWY_LANES(HWY_SVE_T(BASE, BITS))>; \
   using V##CHAR##BITS = HWY_SVE_V(BASE, BITS);                       \
@@ -129,30 +129,30 @@ HWY_SVE_FOREACH(HWY_SPECIALIZE, _, _)
 #undef HWY_SPECIALIZE
 
 // vector = f(d), e.g. Zero
-#define HWY_SVE_RETV_ARGD(BASE, CHAR, BITS, NAME, OP)           \
+#define HWY_SVE_RETV_ARGD(BASE, CHAR, BITS, SUFF, NAME, OP)           \
   HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_D(CHAR, BITS) d) { \
     (void)Lanes(d);                                             \
-    return v##OP##_##CHAR##BITS();                              \
+    return sv##OP##_##CHAR##BITS(0.0);                              \
   }
 
 // vector = f(vector), e.g. Not
-#define HWY_SVE_RETV_ARGV(BASE, CHAR, BITS, NAME, OP)           \
+#define HWY_SVE_RETV_ARGV(BASE, CHAR, BITS, SUFF, NAME, OP)           \
   HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) v) { \
-    return v##OP##_v_##CHAR##BITS(v);                           \
+    return sv##OP##_v_##CHAR##BITS(v);                           \
   }
 
 // vector = f(vector, scalar), e.g. detail::Add
-#define HWY_SVE_RETV_ARGVS(BASE, CHAR, BITS, NAME, OP)         \
+#define HWY_SVE_RETV_ARGVS(BASE, CHAR, BITS, SUFF, NAME, OP)         \
   HWY_API HWY_SVE_V(BASE, BITS)                                \
       NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_T(BASE, BITS) b) { \
-    return v##OP##_##CHAR##BITS(a, b);                         \
+    return sv##OP##_##CHAR##BITS(a, b);                         \
   }
 
 // vector = f(vector, vector), e.g. Add
-#define HWY_SVE_RETV_ARGVV(BASE, CHAR, BITS, NAME, OP)         \
+#define HWY_SVE_RETV_ARGVV(BASE, CHAR, BITS, SUFF, NAME, OP)         \
   HWY_API HWY_SVE_V(BASE, BITS)                                \
       NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
-    return v##OP##_vv_##CHAR##BITS(a, b);                      \
+    return sv##OP##_vv_##CHAR##BITS(a, b);                      \
   }
 
 // ================================================== INIT
@@ -161,30 +161,29 @@ HWY_SVE_FOREACH(HWY_SPECIALIZE, _, _)
 
 // WARNING: we want to query VLMAX/sizeof(T), but this actually changes VL!
 // vlenb is not exposed through intrinsics and vreadvl is not VLMAX.
-#define HWY_SVE_LANES(BASE, CHAR, BITS, NAME, OP) \
-  HWY_API size_t NAME(HWY_SVE_D(CHAR, BITS) /* d */) { return v##OP##BITS(); }
-
-HWY_SVE_FOREACH(HWY_SVE_LANES, Lanes, setvlmax_e)
+#define HWY_SVE_LANES(BASE, CHAR, BITS, SUFF, NAME, OP) \
+  HWY_API size_t NAME(HWY_SVE_D(CHAR, BITS) /* d */) { return sv##OP##SUFF(); }
+HWY_SVE_FOREACH(HWY_SVE_LANES, Lanes, cnt)
 #undef HWY_SVE_LANES
 
-// ------------------------------ Zero
+// // ------------------------------ Zero
 
-HWY_SVE_FOREACH(HWY_SVE_RETV_ARGD, Zero, zero)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGD, Zero, dup)
+// svint8_t svdup[_n]_s8(int8_t op)
 
 template <class D>
 using VFromD = decltype(Zero(D()));
 
 // ------------------------------ Set
 // vector = f(d, scalar), e.g. Set
-#define HWY_SVE_SET(BASE, CHAR, BITS, NAME, OP)                  \
+#define HWY_SVE_SET(BASE, CHAR, BITS, SUFF, NAME, OP)                  \
   HWY_API HWY_SVE_V(BASE, BITS)                                  \
       NAME(HWY_SVE_D(CHAR, BITS) d, HWY_SVE_T(BASE, BITS) arg) { \
     (void)Lanes(d);                                              \
-    return v##OP##_##CHAR##BITS(arg);                            \
+    return sv##OP##_##CHAR##BITS(arg);                            \
   }
 
-HWY_SVE_FOREACH_UI(HWY_SVE_SET, Set, mv_v_x)
-HWY_SVE_FOREACH_F(HWY_SVE_SET, Set, fmv_v_f)
+HWY_SVE_FOREACH(HWY_SVE_SET, Set, dup)
 #undef HWY_SVE_SET
 
 // ------------------------------ Undefined

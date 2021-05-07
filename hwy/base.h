@@ -333,7 +333,7 @@ static constexpr HWY_MAYBE_UNUSED size_t kMaxVectorSize = 16;
 // by concatenating base type and bits.
 
 // RVV already has a builtin type and the GCC intrinsics require it.
-#if HWY_ARCH_RVV && HWY_COMPILER_GCC
+#if (HWY_ARCH_RVV && HWY_COMPILER_GCC) || HWY_ARCH_ARM_A64
 #define HWY_NATIVE_FLOAT16 1
 #else
 #define HWY_NATIVE_FLOAT16 0
