@@ -166,10 +166,9 @@ HWY_SVE_FOREACH(HWY_SPECIALIZE, _, _)
 HWY_SVE_FOREACH(HWY_SVE_LANES, Lanes, cnt)
 #undef HWY_SVE_LANES
 
-// // ------------------------------ Zero
+// ------------------------------ Zero
 
 HWY_SVE_FOREACH(HWY_SVE_RETV_ARGD, Zero, dup)
-// svint8_t svdup[_n]_s8(int8_t op)
 
 template <class D>
 using VFromD = decltype(Zero(D()));
@@ -195,7 +194,7 @@ HWY_SVE_FOREACH(HWY_SVE_RETV_ARGD, Undefined, undefined)
 namespace detail {
 
 // u8: no change
-#define HWY_SVE_CAST_NOP(BASE, CHAR, BITS, NAME, OP)                           \
+#define HWY_SVE_CAST_NOP(BASE, CHAR, BITS, SUFF, NAME, OP)                           \
   HWY_API HWY_SVE_V(BASE, BITS) BitCastToByte(HWY_SVE_V(BASE, BITS) v) {       \
     return v;                                                                  \
   }                                                                            \
@@ -205,7 +204,7 @@ namespace detail {
   }
 
 // Other integers
-#define HWY_SVE_CAST_UI(BASE, CHAR, BITS, NAME, OP)                   \
+#define HWY_SVE_CAST_UI(BASE, CHAR, BITS, SUFF, NAME, OP)                   \
   HWY_API vuint8m##_t BitCastToByte(HWY_SVE_V(BASE, BITS) v) {        \
     return v##OP##_v_##CHAR##BITS##_u8m(v);                           \
   }                                                                   \
@@ -215,7 +214,7 @@ namespace detail {
   }
 
 // Float: first cast to/from unsigned
-#define HWY_SVE_CAST_F(BASE, CHAR, BITS, NAME, OP)                    \
+#define HWY_SVE_CAST_F(BASE, CHAR, BITS, SUFF, NAME, OP)                    \
   HWY_API vuint8m##_t BitCastToByte(HWY_SVE_V(BASE, BITS) v) {        \
     return v##OP##_v_u##BITS##_u8m(v##OP##_v_f##BITS##_u##BITS(v));   \
   }                                                                   \
@@ -297,7 +296,7 @@ HWY_API V And(const V a, const V b) {
 // ------------------------------ Or
 
 // Scalar argument plus mask. Used by VecFromMask.
-#define HWY_SVE_OR_MASK(BASE, CHAR, BITS, NAME, OP)                 \
+#define HWY_SVE_OR_MASK(BASE, CHAR, BITS, SUFF, NAME, OP)                 \
   HWY_API HWY_SVE_V(BASE, BITS)                                     \
       NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_T(BASE, BITS) imm,      \
            HWY_SVE_M(MLEN) mask, HWY_SVE_V(BASE, BITS) maskedoff) { \
@@ -393,7 +392,7 @@ HWY_SVE_FOREACH_U16(HWY_SVE_RETV_ARGVV, AverageRound, aaddu)
 // ------------------------------ ShiftLeft[Same]
 
 // Intrinsics do not define .vi forms, so use .vx instead.
-#define HWY_SVE_SHIFT(BASE, CHAR, BITS, NAME, OP)                  \
+#define HWY_SVE_SHIFT(BASE, CHAR, BITS, SUFF, NAME, OP)                  \
   template <int kBits>                                             \
   HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) v) {    \
     return v##OP##_vx_##CHAR##BITS(v, kBits);                      \
@@ -413,7 +412,7 @@ HWY_SVE_FOREACH_I(HWY_SVE_SHIFT, ShiftRight, sra)
 #undef HWY_SVE_SHIFT
 
 // ------------------------------ Shl
-#define HWY_SVE_SHIFT_VV(BASE, CHAR, BITS, NAME, OP)              \
+#define HWY_SVE_SHIFT_VV(BASE, CHAR, BITS, SUFF, NAME, OP)              \
   HWY_API HWY_SVE_V(BASE, BITS)                                   \
       NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_V(BASE, BITS) bits) { \
     return v##OP##_vv_##CHAR##BITS(v, bits);                      \
@@ -421,7 +420,7 @@ HWY_SVE_FOREACH_I(HWY_SVE_SHIFT, ShiftRight, sra)
 
 HWY_SVE_FOREACH_U(HWY_SVE_SHIFT_VV, Shl, sll)
 
-#define HWY_SVE_SHIFT_II(BASE, CHAR, BITS, NAME, OP)                    \
+#define HWY_SVE_SHIFT_II(BASE, CHAR, BITS, SUFF, NAME, OP)                    \
   HWY_API HWY_SVE_V(BASE, BITS)                                         \
       NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_V(BASE, BITS) bits) {       \
     return v##OP##_vv_##CHAR##BITS(v, detail::BitCastToUnsigned(bits)); \
@@ -495,7 +494,7 @@ HWY_API V ApproximateReciprocalSqrt(const V v) {
 
 // ------------------------------ MulAdd
 // Note: op is still named vv, not vvv.
-#define HWY_SVE_FMA(BASE, CHAR, BITS, NAME, OP)                \
+#define HWY_SVE_FMA(BASE, CHAR, BITS, SUFF, NAME, OP)                \
   HWY_API HWY_SVE_V(BASE, BITS)                                \
       NAME(HWY_SVE_V(BASE, BITS) mul, HWY_SVE_V(BASE, BITS) x, \
            HWY_SVE_V(BASE, BITS) add) {                        \
@@ -522,7 +521,7 @@ HWY_SVE_FOREACH_F(HWY_SVE_FMA, NegMulSub, fnmacc)
 // of all bits; SLEN 8 / LMUL 4 = half of all bits.
 
 // mask = f(vector, vector)
-#define HWY_SVE_RETM_ARGVV(BASE, CHAR, BITS, NAME, OP)         \
+#define HWY_SVE_RETM_ARGVV(BASE, CHAR, BITS, SUFF, NAME, OP)         \
   HWY_API HWY_SVE_M(MLEN)                                      \
       NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
     (void)Lanes(DFromV<decltype(a)>());                        \
@@ -601,7 +600,7 @@ HWY_SVE_FOREACH_B(HWY_SVE_RETM_ARGMM, Xor, xor)
 #undef HWY_SVE_RETM_ARGMM
 
 // ------------------------------ IfThenElse
-#define HWY_SVE_IF_THEN_ELSE(BASE, CHAR, BITS, NAME, OP) \
+#define HWY_SVE_IF_THEN_ELSE(BASE, CHAR, BITS, SUFF, NAME, OP) \
   HWY_API HWY_SVE_V(BASE, BITS)                          \
       NAME(HWY_SVE_M(MLEN) m, HWY_SVE_V(BASE, BITS) yes, \
            HWY_SVE_V(BASE, BITS) no) {                   \
@@ -700,7 +699,7 @@ HWY_SVE_FOREACH_B(HWY_SVE_COUNT_TRUE, _, _)
 
 // ------------------------------ Load
 
-#define HWY_SVE_LOAD(BASE, CHAR, BITS, NAME, OP)                               \
+#define HWY_SVE_LOAD(BASE, CHAR, BITS, SUFF, NAME, OP)                               \
   HWY_API HWY_SVE_V(BASE, BITS) NAME(                                          \
       HWY_SVE_D(CHAR, BITS) d, const HWY_SVE_T(BASE, BITS) * HWY_RESTRICT p) { \
     (void)Lanes(d);                                                            \
@@ -725,7 +724,7 @@ HWY_API VFromD<D> LoadU(D d, const TFromD<D>* HWY_RESTRICT p) {
 
 // ------------------------------ Store
 
-#define HWY_SVE_RET_ARGVDP(BASE, CHAR, BITS, NAME, OP)                \
+#define HWY_SVE_RET_ARGVDP(BASE, CHAR, BITS, SUFF, NAME, OP)                \
   HWY_API void NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_D(CHAR, BITS) d, \
                     HWY_SVE_T(BASE, BITS) * HWY_RESTRICT p) {         \
     (void)Lanes(d);                                                   \
@@ -751,7 +750,7 @@ HWY_API void Stream(const V v, D d, T* HWY_RESTRICT aligned) {
 
 // ------------------------------ ScatterOffset
 
-#define HWY_SVE_SCATTER(BASE, CHAR, BITS, NAME, OP)                         \
+#define HWY_SVE_SCATTER(BASE, CHAR, BITS, SUFF, NAME, OP)                         \
   HWY_API void NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_D(CHAR, BITS) /* d */, \
                     HWY_SVE_T(BASE, BITS) * HWY_RESTRICT base,              \
                     HWY_SVE_V(int, BITS) offset) {                          \
@@ -777,7 +776,7 @@ HWY_API void ScatterIndex(VFromD<D> v, D d, TFromD<D>* HWY_RESTRICT base,
 
 // ------------------------------ GatherOffset
 
-#define HWY_SVE_GATHER(BASE, CHAR, BITS, NAME, OP)          \
+#define HWY_SVE_GATHER(BASE, CHAR, BITS, SUFF, NAME, OP)          \
   HWY_API HWY_SVE_V(BASE, BITS)                             \
       NAME(HWY_SVE_D(CHAR, BITS) /* d */,                   \
            const HWY_SVE_T(BASE, BITS) * HWY_RESTRICT base, \
@@ -804,7 +803,7 @@ HWY_API VFromD<D> GatherIndex(D d, const TFromD<D>* HWY_RESTRICT base,
 
 // ------------------------------ StoreInterleaved3
 
-#define HWY_SVE_STORE3(BASE, CHAR, BITS, NAME, OP)                          \
+#define HWY_SVE_STORE3(BASE, CHAR, BITS, SUFF, NAME, OP)                          \
   HWY_API void NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b,       \
                     HWY_SVE_V(BASE, BITS) c, HWY_SVE_D(CHAR, BITS) /* d */, \
                     HWY_SVE_T(BASE, BITS) * HWY_RESTRICT unaligned) {       \
@@ -819,7 +818,7 @@ HWY_SVE_STORE3(uint, u, 8, 2, 4, StoreInterleaved3, sseg3)
 
 // ------------------------------ StoreInterleaved4
 
-#define HWY_SVE_STORE4(BASE, CHAR, BITS, NAME, OP)                             \
+#define HWY_SVE_STORE4(BASE, CHAR, BITS, SUFF, NAME, OP)                             \
   HWY_API void NAME(HWY_SVE_V(BASE, BITS) v0, HWY_SVE_V(BASE, BITS) v1,        \
                     HWY_SVE_V(BASE, BITS) v2, HWY_SVE_V(BASE, BITS) v3,        \
                     HWY_SVE_D(CHAR, BITS) /* d */,                             \
@@ -1043,7 +1042,7 @@ HWY_API Vi32m4 DemoteTo(Di32m4 /* d */, const Vf64m8 v) {
 
 // ------------------------------ ConvertTo F
 
-#define HWY_SVE_CONVERT(BASE, CHAR, BITS, NAME, OP)                      \
+#define HWY_SVE_CONVERT(BASE, CHAR, BITS, SUFF, NAME, OP)                      \
   HWY_API HWY_SVE_V(BASE, BITS)                                          \
       ConvertTo(HWY_SVE_D(CHAR, BITS) /* d */, HWY_SVE_V(int, BITS) v) { \
     return vfcvt_f_x_v_f##BITS(v);                                       \
@@ -1067,7 +1066,7 @@ HWY_SVE_FOREACH_F(HWY_SVE_CONVERT, _, _)
 
 // ------------------------------ Compress
 
-#define HWY_SVE_COMPRESS(BASE, CHAR, BITS, NAME, OP)        \
+#define HWY_SVE_COMPRESS(BASE, CHAR, BITS, SUFF, NAME, OP)        \
   HWY_API HWY_SVE_V(BASE, BITS)                             \
       NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_M(MLEN) mask) { \
     return v##OP##_vm_##CHAR##BITS(mask, v, v);             \
@@ -1103,7 +1102,7 @@ HWY_API VFromD<DU> SetTableIndices(D d, const TFromD<DU>* idx) {
 
 // <32bit are not part of Highway API, but used in Broadcast. This limits VLMAX
 // to 2048! We could instead use vrgatherei16.
-#define HWY_SVE_TABLE(BASE, CHAR, BITS, NAME, OP)                \
+#define HWY_SVE_TABLE(BASE, CHAR, BITS, SUFF, NAME, OP)                \
   HWY_API HWY_SVE_V(BASE, BITS)                                  \
       NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_V(uint, BITS) idx) { \
     return v##OP##_vv_##CHAR##BITS(v, idx);                      \
@@ -1226,7 +1225,7 @@ HWY_API V Broadcast(const V v) {
 
 // ------------------------------ GetLane
 
-#define HWY_SVE_GET_LANE(BASE, CHAR, BITS, NAME, OP)            \
+#define HWY_SVE_GET_LANE(BASE, CHAR, BITS, SUFF, NAME, OP)            \
   HWY_API HWY_SVE_T(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) v) { \
     return v##OP##_s_##CHAR##BITS##_##CHAR##BITS(v);            \
   }
@@ -1238,7 +1237,7 @@ HWY_SVE_FOREACH_F(HWY_SVE_GET_LANE, GetLane, fmv_f)
 // ------------------------------ ShiftLeftLanes
 
 // vector = f(vector, vector, size_t)
-#define HWY_SVE_SLIDE(BASE, CHAR, BITS, NAME, OP)                           \
+#define HWY_SVE_SLIDE(BASE, CHAR, BITS, SUFF, NAME, OP)                           \
   HWY_API HWY_SVE_V(BASE, BITS) NAME(                                       \
       HWY_SVE_V(BASE, BITS) dst, HWY_SVE_V(BASE, BITS) src, size_t lanes) { \
     return v##OP##_vx_##CHAR##BITS(dst, src, lanes);                        \
@@ -1410,7 +1409,7 @@ HWY_API V Combine(const V a, const V b) {
 // ================================================== REDUCE
 
 // vector = f(vector, zero_m1)
-#define HWY_SVE_REDUCE(BASE, CHAR, BITS, NAME, OP)                       \
+#define HWY_SVE_REDUCE(BASE, CHAR, BITS, SUFF, NAME, OP)                       \
   HWY_API HWY_SVE_V(BASE, BITS)                                          \
       NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_V(BASE, BITS, 1) v0) {       \
     vsetvlmax_e##BITS();                                                 \
@@ -1524,7 +1523,7 @@ HWY_API V Neg(const V v) {
 }
 
 // vector = f(vector), but argument is repeated
-#define HWY_SVE_RETV_ARGV2(BASE, CHAR, BITS, NAME, OP)          \
+#define HWY_SVE_RETV_ARGV2(BASE, CHAR, BITS, SUFF, NAME, OP)          \
   HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) v) { \
     return v##OP##_vv_##CHAR##BITS(v, v);                       \
   }
