@@ -132,7 +132,7 @@ HWY_SVE_FOREACH(HWY_SPECIALIZE, _, _)
 #define HWY_SVE_RETV_ARGD(BASE, CHAR, BITS, SUFF, NAME, OP)           \
   HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_D(CHAR, BITS) d) { \
     (void)Lanes(d);                                             \
-    return sv##OP##_##CHAR##BITS(0.0);                              \
+    return sv##OP##_##CHAR##BITS();                              \
   }
 
 // vector = f(vector), e.g. Not
@@ -168,7 +168,16 @@ HWY_SVE_FOREACH(HWY_SVE_LANES, Lanes, cnt)
 
 // ------------------------------ Zero
 
-HWY_SVE_FOREACH(HWY_SVE_RETV_ARGD, Zero, dup)
+// vector = f(d), e.g. Zero
+#define HWY_SVE_ZERO(BASE, CHAR, BITS, SUFF, NAME, OP) \
+  HWY_API HWY_SVE_V(BASE, BITS)                        \
+      NAME(HWY_SVE_D(CHAR, BITS) d) {                  \
+    (void)Lanes(d);                                    \
+    return sv##OP##_##CHAR##BITS(0.0);                 \
+  }
+
+  HWY_SVE_FOREACH(HWY_SVE_ZERO, Zero, dup)
+#undef HWY_SVE_ZERO
 
 template <class D>
 using VFromD = decltype(Zero(D()));
@@ -187,7 +196,7 @@ HWY_SVE_FOREACH(HWY_SVE_SET, Set, dup)
 
 // ------------------------------ Undefined
 
-HWY_SVE_FOREACH(HWY_SVE_RETV_ARGD, Undefined, undefined)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGD, Undefined, undef)
 
 // ------------------------------ BitCast
 
