@@ -1586,7 +1586,7 @@ HWY_INLINE Mask128<int64_t, N> TestBit(Vec128<int64_t, N> v,
 #undef HWY_NEON_BUILD_TPL_HWY_TESTBIT
 #undef HWY_NEON_BUILD_RET_HWY_TESTBIT
 #undef HWY_NEON_BUILD_PARAM_HWY_TESTBIT
-#define HWY_NEON_BUILD_ARG_HWY_TESTBIT
+#undef HWY_NEON_BUILD_ARG_HWY_TESTBIT
 
 // Mask and Vec are the same (true = FF..FF).
 template <typename T, size_t N>
