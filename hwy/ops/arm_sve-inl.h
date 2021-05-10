@@ -184,11 +184,11 @@ using VFromD = decltype(Zero(D()));
 
 // ------------------------------ Set
 // vector = f(d, scalar), e.g. Set
-#define HWY_SVE_SET(BASE, CHAR, BITS, SUFF, NAME, OP)                  \
+#define HWY_SVE_SET(BASE, CHAR, BITS, SUFF, NAME, OP)            \
   HWY_API HWY_SVE_V(BASE, BITS)                                  \
       NAME(HWY_SVE_D(CHAR, BITS) d, HWY_SVE_T(BASE, BITS) arg) { \
     (void)Lanes(d);                                              \
-    return sv##OP##_##CHAR##BITS(arg);                            \
+    return sv##OP##_##CHAR##BITS(arg);                           \
   }
 
 HWY_SVE_FOREACH(HWY_SVE_SET, Set, dup)

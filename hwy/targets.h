@@ -174,7 +174,7 @@
 #define HWY_BASELINE_SVE2 0
 #endif
 
-#if HWY_ARCH_ARM && defined(__ARM_FEATURE_SVE) && 0
+#if HWY_ARCH_ARM && defined(__ARM_FEATURE_SVE) && 1
 #define HWY_BASELINE_SVE HWY_SVE
 #else
 #define HWY_BASELINE_SVE 0
