@@ -135,10 +135,16 @@ HWY_SVE_FOREACH(HWY_SPECIALIZE, _, _)
     return sv##OP##_##CHAR##BITS();                              \
   }
 
-// vector = f(vector), e.g. Not
+// unpredicated vector = f(vector), e.g. Not
 #define HWY_SVE_RETV_ARGV(BASE, CHAR, BITS, SUFF, NAME, OP)           \
   HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) v) { \
-    return sv##OP##_v_##CHAR##BITS(v);                           \
+    return sv##OP##_##CHAR##BITS(v);                           \
+  }
+
+// predicated vector = f(vector), e.g. Not
+#define HWY_SVE_RETV_ARGPV(BASE, CHAR, BITS, SUFF, NAME, OP)           \
+  HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) v) { \
+    return sv##OP##_##CHAR##BITS##_x(svptrue_b##BITS(), v);                           \
   }
 
 // vector = f(vector, scalar), e.g. detail::Add
@@ -470,227 +476,216 @@ HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGPVV, Div, div)
 
 // ------------------------------ ApproximateReciprocal
 
-// TODO(janwas): not yet supported in intrinsics
-template <class V>
-HWY_API V ApproximateReciprocal(const V v) {
-  return Set(DFromV<V>(), 1) / v;
-}
-// HWY_SVE_FOREACH_F32(HWY_SVE_RETV_ARGV, ApproximateReciprocal, frece7)
+HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGV, ApproximateReciprocal, recpe)
 
 // ------------------------------ Sqrt
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGV, Sqrt, fsqrt)
+HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGPV, Sqrt, sqrt)
 
 // ------------------------------ ApproximateReciprocalSqrt
 
-// TODO(janwas): not yet supported in intrinsics
-template <class V>
-HWY_API V ApproximateReciprocalSqrt(const V v) {
-  return ApproximateReciprocal(Sqrt(v));
-}
-// HWY_SVE_FOREACH_F32(HWY_SVE_RETV_ARGV, ApproximateReciprocalSqrt, frsqrte7)
+HWY_SVE_FOREACH_F32(HWY_SVE_RETV_ARGV, ApproximateReciprocalSqrt, rsqrte)
 
 // ------------------------------ MulAdd
-// Note: op is still named vv, not vvv.
 #define HWY_SVE_FMA(BASE, CHAR, BITS, SUFF, NAME, OP)                \
   HWY_API HWY_SVE_V(BASE, BITS)                                \
       NAME(HWY_SVE_V(BASE, BITS) mul, HWY_SVE_V(BASE, BITS) x, \
            HWY_SVE_V(BASE, BITS) add) {                        \
-    return v##OP##_vv_##CHAR##BITS(add, mul, x);               \
+    return sv##OP##_##CHAR##BITS##_x(svptrue_b##BITS(), add, mul, x);               \
   }
 
-HWY_SVE_FOREACH_F(HWY_SVE_FMA, MulAdd, fmacc)
+HWY_SVE_FOREACH_F(HWY_SVE_FMA, MulAdd, mla)
 
 // ------------------------------ NegMulAdd
-HWY_SVE_FOREACH_F(HWY_SVE_FMA, NegMulAdd, fnmsac)
+HWY_SVE_FOREACH_F(HWY_SVE_FMA, NegMulAdd, nmla)
 
 // ------------------------------ MulSub
-HWY_SVE_FOREACH_F(HWY_SVE_FMA, MulSub, fmsac)
+HWY_SVE_FOREACH_F(HWY_SVE_FMA, MulSub, mls)
 
 // ------------------------------ NegMulSub
-HWY_SVE_FOREACH_F(HWY_SVE_FMA, NegMulSub, fnmacc)
+HWY_SVE_FOREACH_F(HWY_SVE_FMA, NegMulSub, nmls)
 
 #undef HWY_SVE_FMA
 
-// ================================================== COMPARE
+// // ================================================== COMPARE
 
-// Comparisons set a mask bit to 1 if the condition is true, else 0. The XX in
-// vboolXX_t is a power of two divisor for vector bits. SLEN 8 / LMUL 1 = 1/8th
-// of all bits; SLEN 8 / LMUL 4 = half of all bits.
+// // Comparisons set a mask bit to 1 if the condition is true, else 0. The XX in
+// // vboolXX_t is a power of two divisor for vector bits. SLEN 8 / LMUL 1 = 1/8th
+// // of all bits; SLEN 8 / LMUL 4 = half of all bits.
 
-// mask = f(vector, vector)
-#define HWY_SVE_RETM_ARGVV(BASE, CHAR, BITS, SUFF, NAME, OP)         \
-  HWY_API HWY_SVE_M(MLEN)                                      \
-      NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
-    (void)Lanes(DFromV<decltype(a)>());                        \
-    return v##OP##_vv_##CHAR##BITS##_b##MLEN(a, b);            \
-  }
+// // mask = f(vector, vector)
+// #define HWY_SVE_RETM_ARGVV(BASE, CHAR, BITS, SUFF, NAME, OP)         \
+//   HWY_API HWY_SVE_M(MLEN)                                      \
+//       NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
+//     (void)Lanes(DFromV<decltype(a)>());                        \
+//     return v##OP##_vv_##CHAR##BITS##_b##MLEN(a, b);            \
+//   }
 
-// ------------------------------ Eq
-HWY_SVE_FOREACH_UI(HWY_SVE_RETM_ARGVV, Eq, mseq)
-HWY_SVE_FOREACH_F(HWY_SVE_RETM_ARGVV, Eq, mfeq)
+// // ------------------------------ Eq
+// HWY_SVE_FOREACH_UI(HWY_SVE_RETM_ARGVV, Eq, mseq)
+// HWY_SVE_FOREACH_F(HWY_SVE_RETM_ARGVV, Eq, mfeq)
 
-// ------------------------------ Ne
-HWY_SVE_FOREACH_UI(HWY_SVE_RETM_ARGVV, Ne, msne)
-HWY_SVE_FOREACH_F(HWY_SVE_RETM_ARGVV, Ne, mfne)
+// // ------------------------------ Ne
+// HWY_SVE_FOREACH_UI(HWY_SVE_RETM_ARGVV, Ne, msne)
+// HWY_SVE_FOREACH_F(HWY_SVE_RETM_ARGVV, Ne, mfne)
 
-// ------------------------------ Lt
-HWY_SVE_FOREACH_I(HWY_SVE_RETM_ARGVV, Lt, mslt)
-HWY_SVE_FOREACH_F(HWY_SVE_RETM_ARGVV, Lt, mflt)
+// // ------------------------------ Lt
+// HWY_SVE_FOREACH_I(HWY_SVE_RETM_ARGVV, Lt, mslt)
+// HWY_SVE_FOREACH_F(HWY_SVE_RETM_ARGVV, Lt, mflt)
 
-// ------------------------------ Gt
+// // ------------------------------ Gt
 
-template <class V>
-HWY_API auto Gt(const V a, const V b) -> decltype(Lt(a, b)) {
-  return Lt(b, a);
-}
+// template <class V>
+// HWY_API auto Gt(const V a, const V b) -> decltype(Lt(a, b)) {
+//   return Lt(b, a);
+// }
 
-// ------------------------------ Le
-HWY_SVE_FOREACH_F(HWY_SVE_RETM_ARGVV, Le, mfle)
+// // ------------------------------ Le
+// HWY_SVE_FOREACH_F(HWY_SVE_RETM_ARGVV, Le, mfle)
 
-#undef HWY_SVE_RETM_ARGVV
+// #undef HWY_SVE_RETM_ARGVV
 
-// ------------------------------ Ge
+// // ------------------------------ Ge
 
-template <class V>
-HWY_API auto Ge(const V a, const V b) -> decltype(Le(a, b)) {
-  return Le(b, a);
-}
+// template <class V>
+// HWY_API auto Ge(const V a, const V b) -> decltype(Le(a, b)) {
+//   return Le(b, a);
+// }
 
-// ------------------------------ TestBit
+// // ------------------------------ TestBit
 
-template <class V>
-HWY_API auto TestBit(const V a, const V bit) -> decltype(Eq(a, bit)) {
-  return Ne(And(a, bit), Zero(DFromV<V>()));
-}
+// template <class V>
+// HWY_API auto TestBit(const V a, const V bit) -> decltype(Eq(a, bit)) {
+//   return Ne(And(a, bit), Zero(DFromV<V>()));
+// }
 
-// ------------------------------ Not
+// // ------------------------------ Not
 
-// mask = f(mask)
-#define HWY_SVE_RETM_ARGM(MLEN, NAME, OP)           \
-  HWY_API HWY_SVE_M(MLEN) NAME(HWY_SVE_M(MLEN) m) { \
-    return vm##OP##_m_b##MLEN(m);                   \
-  }
+// // mask = f(mask)
+// #define HWY_SVE_RETM_ARGM(MLEN, NAME, OP)           \
+//   HWY_API HWY_SVE_M(MLEN) NAME(HWY_SVE_M(MLEN) m) { \
+//     return vm##OP##_m_b##MLEN(m);                   \
+//   }
 
-HWY_SVE_FOREACH_B(HWY_SVE_RETM_ARGM, Not, not )
+// HWY_SVE_FOREACH_B(HWY_SVE_RETM_ARGM, Not, not )
 
-#undef HWY_SVE_RETM_ARGM
+// #undef HWY_SVE_RETM_ARGM
 
-// ------------------------------ And
+// // ------------------------------ And
 
-// mask = f(mask_a, mask_b) (note arg2,arg1 order!)
-#define HWY_SVE_RETM_ARGMM(MLEN, NAME, OP)                             \
-  HWY_API HWY_SVE_M(MLEN) NAME(HWY_SVE_M(MLEN) a, HWY_SVE_M(MLEN) b) { \
-    return vm##OP##_mm_b##MLEN(b, a);                                  \
-  }
+// // mask = f(mask_a, mask_b) (note arg2,arg1 order!)
+// #define HWY_SVE_RETM_ARGMM(MLEN, NAME, OP)                             \
+//   HWY_API HWY_SVE_M(MLEN) NAME(HWY_SVE_M(MLEN) a, HWY_SVE_M(MLEN) b) { \
+//     return vm##OP##_mm_b##MLEN(b, a);                                  \
+//   }
 
-HWY_SVE_FOREACH_B(HWY_SVE_RETM_ARGMM, And, and)
+// HWY_SVE_FOREACH_B(HWY_SVE_RETM_ARGMM, And, and)
 
-// ------------------------------ AndNot
-HWY_SVE_FOREACH_B(HWY_SVE_RETM_ARGMM, AndNot, andnot)
+// // ------------------------------ AndNot
+// HWY_SVE_FOREACH_B(HWY_SVE_RETM_ARGMM, AndNot, andnot)
 
-// ------------------------------ Or
-HWY_SVE_FOREACH_B(HWY_SVE_RETM_ARGMM, Or, or)
+// // ------------------------------ Or
+// HWY_SVE_FOREACH_B(HWY_SVE_RETM_ARGMM, Or, or)
 
-// ------------------------------ Xor
-HWY_SVE_FOREACH_B(HWY_SVE_RETM_ARGMM, Xor, xor)
+// // ------------------------------ Xor
+// HWY_SVE_FOREACH_B(HWY_SVE_RETM_ARGMM, Xor, xor)
 
-#undef HWY_SVE_RETM_ARGMM
+// #undef HWY_SVE_RETM_ARGMM
 
-// ------------------------------ IfThenElse
-#define HWY_SVE_IF_THEN_ELSE(BASE, CHAR, BITS, SUFF, NAME, OP) \
-  HWY_API HWY_SVE_V(BASE, BITS)                          \
-      NAME(HWY_SVE_M(MLEN) m, HWY_SVE_V(BASE, BITS) yes, \
-           HWY_SVE_V(BASE, BITS) no) {                   \
-    return v##OP##_vvm_##CHAR##BITS(m, no, yes);         \
-  }
+// // ------------------------------ IfThenElse
+// #define HWY_SVE_IF_THEN_ELSE(BASE, CHAR, BITS, SUFF, NAME, OP) \
+//   HWY_API HWY_SVE_V(BASE, BITS)                          \
+//       NAME(HWY_SVE_M(MLEN) m, HWY_SVE_V(BASE, BITS) yes, \
+//            HWY_SVE_V(BASE, BITS) no) {                   \
+//     return v##OP##_vvm_##CHAR##BITS(m, no, yes);         \
+//   }
 
-HWY_SVE_FOREACH(HWY_SVE_IF_THEN_ELSE, IfThenElse, merge)
+// HWY_SVE_FOREACH(HWY_SVE_IF_THEN_ELSE, IfThenElse, merge)
 
-#undef HWY_SVE_IF_THEN_ELSE
-// ------------------------------ IfThenElseZero
+// #undef HWY_SVE_IF_THEN_ELSE
+// // ------------------------------ IfThenElseZero
 
-template <class M, class V>
-HWY_API V IfThenElseZero(const M mask, const V yes) {
-  return IfThenElse(mask, yes, Zero(DFromV<V>()));
-}
+// template <class M, class V>
+// HWY_API V IfThenElseZero(const M mask, const V yes) {
+//   return IfThenElse(mask, yes, Zero(DFromV<V>()));
+// }
 
-// ------------------------------ IfThenZeroElse
+// // ------------------------------ IfThenZeroElse
 
-template <class M, class V>
-HWY_API V IfThenZeroElse(const M mask, const V no) {
-  return IfThenElse(mask, Zero(DFromV<V>()), no);
-}
+// template <class M, class V>
+// HWY_API V IfThenZeroElse(const M mask, const V no) {
+//   return IfThenElse(mask, Zero(DFromV<V>()), no);
+// }
 
-// ------------------------------ MaskFromVec
+// // ------------------------------ MaskFromVec
 
-template <class V>
-HWY_API auto MaskFromVec(const V v) -> decltype(Eq(v, v)) {
-  return Ne(v, Zero(DFromV<V>()));
-}
+// template <class V>
+// HWY_API auto MaskFromVec(const V v) -> decltype(Eq(v, v)) {
+//   return Ne(v, Zero(DFromV<V>()));
+// }
 
-template <class D>
-using MFromD = decltype(MaskFromVec(Zero(D())));
+// template <class D>
+// using MFromD = decltype(MaskFromVec(Zero(D())));
 
-template <class D, typename MFrom>
-HWY_API MFromD<D> RebindMask(const D /*d*/, const MFrom mask) {
-  // No need to check lane size/LMUL are the same: if not, casting MFrom to
-  // MFromD<D> would fail.
-  return mask;
-}
+// template <class D, typename MFrom>
+// HWY_API MFromD<D> RebindMask(const D /*d*/, const MFrom mask) {
+//   // No need to check lane size/LMUL are the same: if not, casting MFrom to
+//   // MFromD<D> would fail.
+//   return mask;
+// }
 
-// ------------------------------ VecFromMask
+// // ------------------------------ VecFromMask
 
-template <class D, HWY_IF_NOT_FLOAT_D(D)>
-HWY_API VFromD<D> VecFromMask(const D d, MFromD<D> mask) {
-  const auto v0 = Zero(d);
-  return detail::Or(v0, -1, mask, v0);
-}
+// template <class D, HWY_IF_NOT_FLOAT_D(D)>
+// HWY_API VFromD<D> VecFromMask(const D d, MFromD<D> mask) {
+//   const auto v0 = Zero(d);
+//   return detail::Or(v0, -1, mask, v0);
+// }
 
-template <class D, HWY_IF_FLOAT_D(D)>
-HWY_API VFromD<D> VecFromMask(const D d, MFromD<D> mask) {
-  return BitCast(d, VecFromMask(RebindToUnsigned<D>(), mask));
-}
+// template <class D, HWY_IF_FLOAT_D(D)>
+// HWY_API VFromD<D> VecFromMask(const D d, MFromD<D> mask) {
+//   return BitCast(d, VecFromMask(RebindToUnsigned<D>(), mask));
+// }
 
-// ------------------------------ ZeroIfNegative
+// // ------------------------------ ZeroIfNegative
 
-template <class V>
-HWY_API V ZeroIfNegative(const V v) {
-  const auto v0 = Zero(DFromV<V>());
-  // We already have a zero constant, so avoid IfThenZeroElse.
-  return IfThenElse(Lt(v, v0), v0, v);
-}
+// template <class V>
+// HWY_API V ZeroIfNegative(const V v) {
+//   const auto v0 = Zero(DFromV<V>());
+//   // We already have a zero constant, so avoid IfThenZeroElse.
+//   return IfThenElse(Lt(v, v0), v0, v);
+// }
 
-// ------------------------------ BroadcastSignBit
+// // ------------------------------ BroadcastSignBit
 
-template <class V>
-HWY_API V BroadcastSignBit(const V v) {
-  return ShiftRight<sizeof(TFromV<V>) * 8 - 1>(v);
-}
+// template <class V>
+// HWY_API V BroadcastSignBit(const V v) {
+//   return ShiftRight<sizeof(TFromV<V>) * 8 - 1>(v);
+// }
 
-// ------------------------------ AllFalse
+// // ------------------------------ AllFalse
 
-#define HWY_SVE_ALL_FALSE(MLEN, NAME, OP)          \
-  HWY_API bool AllFalse(const HWY_SVE_M(MLEN) m) { \
-    return vfirst_m_b##MLEN(m) < 0;                \
-  }
-HWY_SVE_FOREACH_B(HWY_SVE_ALL_FALSE, _, _)
-#undef HWY_SVE_ALL_FALSE
+// #define HWY_SVE_ALL_FALSE(MLEN, NAME, OP)          \
+//   HWY_API bool AllFalse(const HWY_SVE_M(MLEN) m) { \
+//     return vfirst_m_b##MLEN(m) < 0;                \
+//   }
+// HWY_SVE_FOREACH_B(HWY_SVE_ALL_FALSE, _, _)
+// #undef HWY_SVE_ALL_FALSE
 
-// ------------------------------ AllTrue
+// // ------------------------------ AllTrue
 
-#define HWY_SVE_ALL_TRUE(MLEN, NAME, OP)    \
-  HWY_API bool AllTrue(HWY_SVE_M(MLEN) m) { \
-    return AllFalse(vmnot_m_b##MLEN(m));    \
-  }
-HWY_SVE_FOREACH_B(HWY_SVE_ALL_TRUE, _, _)
-#undef HWY_SVE_ALL_TRUE
+// #define HWY_SVE_ALL_TRUE(MLEN, NAME, OP)    \
+//   HWY_API bool AllTrue(HWY_SVE_M(MLEN) m) { \
+//     return AllFalse(vmnot_m_b##MLEN(m));    \
+//   }
+// HWY_SVE_FOREACH_B(HWY_SVE_ALL_TRUE, _, _)
+// #undef HWY_SVE_ALL_TRUE
 
-// ------------------------------ CountTrue
+// // ------------------------------ CountTrue
 
-#define HWY_SVE_COUNT_TRUE(MLEN, NAME, OP) \
-  HWY_API size_t CountTrue(HWY_SVE_M(MLEN) m) { return vpopc_m_b##MLEN(m); }
-HWY_SVE_FOREACH_B(HWY_SVE_COUNT_TRUE, _, _)
-#undef HWY_SVE_COUNT_TRUE
+// #define HWY_SVE_COUNT_TRUE(MLEN, NAME, OP) \
+//   HWY_API size_t CountTrue(HWY_SVE_M(MLEN) m) { return vpopc_m_b##MLEN(m); }
+// HWY_SVE_FOREACH_B(HWY_SVE_COUNT_TRUE, _, _)
+// #undef HWY_SVE_COUNT_TRUE
 
 // ================================================== MEMORY
 
