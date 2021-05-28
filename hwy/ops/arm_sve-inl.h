@@ -145,14 +145,20 @@ HWY_SVE_FOREACH(HWY_SPECIALIZE, _, _)
 #define HWY_SVE_RETV_ARGVS(BASE, CHAR, BITS, SUFF, NAME, OP)         \
   HWY_API HWY_SVE_V(BASE, BITS)                                \
       NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_T(BASE, BITS) b) { \
-    return sv##OP##_##CHAR##BITS(a, b);                         \
+    return sv##OP##_n_##CHAR##BITS##_x(svptrue_b##BITS(), a, b);                         \
   }
 
-// vector = f(vector, vector), e.g. Add
+// unpredicated vector = f(vector, vector), e.g. saturated Add
 #define HWY_SVE_RETV_ARGVV(BASE, CHAR, BITS, SUFF, NAME, OP)         \
   HWY_API HWY_SVE_V(BASE, BITS)                                \
       NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
-    return sv##OP##_vv_##CHAR##BITS(a, b);                      \
+    return sv##OP##_##CHAR##BITS(a, b);                      \
+  }
+// predicated vector = f(vector, vector), e.g. Add
+#define HWY_SVE_RETV_ARGPVV(BASE, CHAR, BITS, SUFF, NAME, OP)         \
+  HWY_API HWY_SVE_V(BASE, BITS)                                \
+      NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
+    return sv##OP##_##CHAR##BITS##_x(svptrue_b##BITS(), a, b);                      \
   }
 
 // ================================================== INIT
@@ -259,138 +265,138 @@ HWY_API VFromD<DU> BitCastToUnsigned(V v) {
 
 }  // namespace detail
 
-// ------------------------------ Iota
+// // ------------------------------ Iota
 
-namespace detail {
+// namespace detail {
 
-HWY_SVE_FOREACH_U(HWY_SVE_RETV_ARGD, Iota0, id_v)
+// HWY_SVE_FOREACH_U(HWY_SVE_RETV_ARGD, Iota0, id_v)
 
-template <class D, class DU = RebindToUnsigned<D>>
-HWY_API VFromD<DU> Iota0(const D /*d*/) {
-  Lanes(DU());
-  return BitCastToUnsigned(Iota0(DU()));
-}
+// template <class D, class DU = RebindToUnsigned<D>>
+// HWY_API VFromD<DU> Iota0(const D /*d*/) {
+//   Lanes(DU());
+//   return BitCastToUnsigned(Iota0(DU()));
+// }
 
-}  // namespace detail
+// }  // namespace detail
 
-// ================================================== LOGICAL
+// // ================================================== LOGICAL
 
-// ------------------------------ Not
+// // ------------------------------ Not
 
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGV, Not, not )
+// HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGV, Not, not )
 
-template <class V, HWY_IF_FLOAT_V(V)>
-HWY_API V Not(const V v) {
-  using DF = DFromV<V>;
-  using DU = RebindToUnsigned<DF>;
-  return BitCast(DF(), Not(BitCast(DU(), v)));
-}
+// template <class V, HWY_IF_FLOAT_V(V)>
+// HWY_API V Not(const V v) {
+//   using DF = DFromV<V>;
+//   using DU = RebindToUnsigned<DF>;
+//   return BitCast(DF(), Not(BitCast(DU(), v)));
+// }
 
-// ------------------------------ And
+// // ------------------------------ And
 
-// Non-vector version (ideally immediate) for use with Iota0
-namespace detail {
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVS, And, and_vx)
-}  // namespace detail
+// // Non-vector version (ideally immediate) for use with Iota0
+// namespace detail {
+// HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVS, And, and_vx)
+// }  // namespace detail
 
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVV, And, and)
+// HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVV, And, and)
 
-template <class V, HWY_IF_FLOAT_V(V)>
-HWY_API V And(const V a, const V b) {
-  using DF = DFromV<V>;
-  using DU = RebindToUnsigned<DF>;
-  return BitCast(DF(), And(BitCast(DU(), a), BitCast(DU(), b)));
-}
+// template <class V, HWY_IF_FLOAT_V(V)>
+// HWY_API V And(const V a, const V b) {
+//   using DF = DFromV<V>;
+//   using DU = RebindToUnsigned<DF>;
+//   return BitCast(DF(), And(BitCast(DU(), a), BitCast(DU(), b)));
+// }
 
-// ------------------------------ Or
+// // ------------------------------ Or
 
-// Scalar argument plus mask. Used by VecFromMask.
-#define HWY_SVE_OR_MASK(BASE, CHAR, BITS, SUFF, NAME, OP)                 \
-  HWY_API HWY_SVE_V(BASE, BITS)                                     \
-      NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_T(BASE, BITS) imm,      \
-           HWY_SVE_M(MLEN) mask, HWY_SVE_V(BASE, BITS) maskedoff) { \
-    return v##OP##_##CHAR##BITS##_m(mask, maskedoff, v, imm);       \
-  }
+// // Scalar argument plus mask. Used by VecFromMask.
+// #define HWY_SVE_OR_MASK(BASE, CHAR, BITS, SUFF, NAME, OP)                 \
+//   HWY_API HWY_SVE_V(BASE, BITS)                                     \
+//       NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_T(BASE, BITS) imm,      \
+//            HWY_SVE_M(MLEN) mask, HWY_SVE_V(BASE, BITS) maskedoff) { \
+//     return v##OP##_##CHAR##BITS##_m(mask, maskedoff, v, imm);       \
+//   }
 
-namespace detail {
-HWY_SVE_FOREACH_UI(HWY_SVE_OR_MASK, Or, or_vx)
-}  // namespace detail
+// namespace detail {
+// HWY_SVE_FOREACH_UI(HWY_SVE_OR_MASK, Or, or_vx)
+// }  // namespace detail
 
-#undef HWY_SVE_OR_MASK
+// #undef HWY_SVE_OR_MASK
 
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVV, Or, or)
+// HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVV, Or, or)
 
-template <class V, HWY_IF_FLOAT_V(V)>
-HWY_API V Or(const V a, const V b) {
-  using DF = DFromV<V>;
-  using DU = RebindToUnsigned<DF>;
-  return BitCast(DF(), Or(BitCast(DU(), a), BitCast(DU(), b)));
-}
+// template <class V, HWY_IF_FLOAT_V(V)>
+// HWY_API V Or(const V a, const V b) {
+//   using DF = DFromV<V>;
+//   using DU = RebindToUnsigned<DF>;
+//   return BitCast(DF(), Or(BitCast(DU(), a), BitCast(DU(), b)));
+// }
 
-// ------------------------------ Xor
+// // ------------------------------ Xor
 
-// Non-vector version (ideally immediate) for use with Iota0
-namespace detail {
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVS, Xor, xor_vx)
-}  // namespace detail
+// // Non-vector version (ideally immediate) for use with Iota0
+// namespace detail {
+// HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVS, Xor, xor_vx)
+// }  // namespace detail
 
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVV, Xor, xor)
+// HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVV, Xor, xor)
 
-template <class V, HWY_IF_FLOAT_V(V)>
-HWY_API V Xor(const V a, const V b) {
-  using DF = DFromV<V>;
-  using DU = RebindToUnsigned<DF>;
-  return BitCast(DF(), Xor(BitCast(DU(), a), BitCast(DU(), b)));
-}
+// template <class V, HWY_IF_FLOAT_V(V)>
+// HWY_API V Xor(const V a, const V b) {
+//   using DF = DFromV<V>;
+//   using DU = RebindToUnsigned<DF>;
+//   return BitCast(DF(), Xor(BitCast(DU(), a), BitCast(DU(), b)));
+// }
 
-// ------------------------------ AndNot
+// // ------------------------------ AndNot
 
-template <class V>
-HWY_API V AndNot(const V not_a, const V b) {
-  return And(Not(not_a), b);
-}
+// template <class V>
+// HWY_API V AndNot(const V not_a, const V b) {
+//   return And(Not(not_a), b);
+// }
 
-// ------------------------------ CopySign
+// // ------------------------------ CopySign
 
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVV, CopySign, fsgnj)
+// HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVV, CopySign, fsgnj)
 
-template <class V>
-HWY_API V CopySignToAbs(const V abs, const V sign) {
-  // TODO(janwas): separate handling for abs < 0 or same?
-  return CopySign(abs, sign);
-}
+// template <class V>
+// HWY_API V CopySignToAbs(const V abs, const V sign) {
+//   // TODO(janwas): separate handling for abs < 0 or same?
+//   return CopySign(abs, sign);
+// }
 
 // ================================================== ARITHMETIC
 
 // ------------------------------ Add
 
 namespace detail {
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVS, Add, add_vx)
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVS, Add, fadd_vf)
+HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVS, Add, add)
+HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVS, Add, add)
 }  // namespace detail
 
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVV, Add, add)
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVV, Add, fadd)
+HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGPVV, Add, add)
+HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGPVV, Add, add)
 
 // ------------------------------ Sub
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVV, Sub, sub)
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVV, Sub, fsub)
+HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGPVV, Sub, sub)
+HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGPVV, Sub, sub)
 
 // ------------------------------ SaturatedAdd
 
-HWY_SVE_FOREACH_U08(HWY_SVE_RETV_ARGVV, SaturatedAdd, saddu)
-HWY_SVE_FOREACH_U16(HWY_SVE_RETV_ARGVV, SaturatedAdd, saddu)
+HWY_SVE_FOREACH_U08(HWY_SVE_RETV_ARGVV, SaturatedAdd, qadd)
+HWY_SVE_FOREACH_U16(HWY_SVE_RETV_ARGVV, SaturatedAdd, qadd)
 
-HWY_SVE_FOREACH_I08(HWY_SVE_RETV_ARGVV, SaturatedAdd, sadd)
-HWY_SVE_FOREACH_I16(HWY_SVE_RETV_ARGVV, SaturatedAdd, sadd)
+HWY_SVE_FOREACH_I08(HWY_SVE_RETV_ARGVV, SaturatedAdd, qadd)
+HWY_SVE_FOREACH_I16(HWY_SVE_RETV_ARGVV, SaturatedAdd, qadd)
 
 // ------------------------------ SaturatedSub
 
-HWY_SVE_FOREACH_U08(HWY_SVE_RETV_ARGVV, SaturatedSub, ssubu)
-HWY_SVE_FOREACH_U16(HWY_SVE_RETV_ARGVV, SaturatedSub, ssubu)
+HWY_SVE_FOREACH_U08(HWY_SVE_RETV_ARGVV, SaturatedSub, qsub)
+HWY_SVE_FOREACH_U16(HWY_SVE_RETV_ARGVV, SaturatedSub, qsub)
 
-HWY_SVE_FOREACH_I08(HWY_SVE_RETV_ARGVV, SaturatedSub, ssub)
-HWY_SVE_FOREACH_I16(HWY_SVE_RETV_ARGVV, SaturatedSub, ssub)
+HWY_SVE_FOREACH_I08(HWY_SVE_RETV_ARGVV, SaturatedSub, qsub)
+HWY_SVE_FOREACH_I16(HWY_SVE_RETV_ARGVV, SaturatedSub, qsub)
 
 // ------------------------------ AverageRound
 
