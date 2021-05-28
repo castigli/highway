@@ -389,7 +389,7 @@ HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVV, SaturatedSub, qsub)
 
 // // ------------------------------ AverageRound
 
-// Sve does not seems to ave this intrinsic
+// Sve does not seems to have this intrinsic
 // HWY_SVE_FOREACH_U08(HWY_SVE_RETV_ARGVV, AverageRound, aaddu)
 // HWY_SVE_FOREACH_U16(HWY_SVE_RETV_ARGVV, AverageRound, aaddu)
 
@@ -456,18 +456,17 @@ HWY_SVE_FOREACH(HWY_SVE_RETV_ARGPVV, Max, max)
 
 // ------------------------------ Mul
 
-HWY_SVE_FOREACH_UI16(HWY_SVE_RETV_ARGVV, Mul, mul)
-HWY_SVE_FOREACH_UI32(HWY_SVE_RETV_ARGVV, Mul, mul)
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVV, Mul, fmul)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGPVV, Mul, mul)
 
 // ------------------------------ MulHigh
 
-HWY_SVE_FOREACH_U16(HWY_SVE_RETV_ARGVV, MulHigh, mulhu)
-HWY_SVE_FOREACH_I16(HWY_SVE_RETV_ARGVV, MulHigh, mulh)
+HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGPVV, MulHigh, mulh)
 
 // ------------------------------ Div
 
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVV, Div, fdiv)
+HWY_SVE_FOREACH_UI32(HWY_SVE_RETV_ARGPVV, Div, div)
+HWY_SVE_FOREACH_UI64(HWY_SVE_RETV_ARGPVV, Div, div)
+HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGPVV, Div, div)
 
 // ------------------------------ ApproximateReciprocal
 
