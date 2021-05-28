@@ -371,105 +371,88 @@ HWY_API VFromD<DU> BitCastToUnsigned(V v) {
 // ------------------------------ Add
 
 namespace detail {
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVS, Add, add)
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVS, Add, add)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGVS, Add, add)
 }  // namespace detail
 
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGPVV, Add, add)
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGPVV, Add, add)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGPVV, Add, add)
 
 // ------------------------------ Sub
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGPVV, Sub, sub)
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGPVV, Sub, sub)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGPVV, Sub, sub)
 
 // ------------------------------ SaturatedAdd
 
-HWY_SVE_FOREACH_U08(HWY_SVE_RETV_ARGVV, SaturatedAdd, qadd)
-HWY_SVE_FOREACH_U16(HWY_SVE_RETV_ARGVV, SaturatedAdd, qadd)
-
-HWY_SVE_FOREACH_I08(HWY_SVE_RETV_ARGVV, SaturatedAdd, qadd)
-HWY_SVE_FOREACH_I16(HWY_SVE_RETV_ARGVV, SaturatedAdd, qadd)
+HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVV, SaturatedAdd, qadd)
 
 // ------------------------------ SaturatedSub
 
-HWY_SVE_FOREACH_U08(HWY_SVE_RETV_ARGVV, SaturatedSub, qsub)
-HWY_SVE_FOREACH_U16(HWY_SVE_RETV_ARGVV, SaturatedSub, qsub)
+HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGVV, SaturatedSub, qsub)
 
-HWY_SVE_FOREACH_I08(HWY_SVE_RETV_ARGVV, SaturatedSub, qsub)
-HWY_SVE_FOREACH_I16(HWY_SVE_RETV_ARGVV, SaturatedSub, qsub)
+// // ------------------------------ AverageRound
 
-// ------------------------------ AverageRound
+// Sve does not seems to ave this intrinsic
+// HWY_SVE_FOREACH_U08(HWY_SVE_RETV_ARGVV, AverageRound, aaddu)
+// HWY_SVE_FOREACH_U16(HWY_SVE_RETV_ARGVV, AverageRound, aaddu)
 
-// TODO(janwas): check vxrm rounding mode
-HWY_SVE_FOREACH_U08(HWY_SVE_RETV_ARGVV, AverageRound, aaddu)
-HWY_SVE_FOREACH_U16(HWY_SVE_RETV_ARGVV, AverageRound, aaddu)
+// // ------------------------------ ShiftLeft[Same]
 
-// ------------------------------ ShiftLeft[Same]
+// // Intrinsics do not define .vi forms, so use .vx instead.
+// #define HWY_SVE_SHIFT(BASE, CHAR, BITS, SUFF, NAME, OP)                  \
+//   template <int kBits>                                             \
+//   HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) v) {    \
+//     return v##OP##_vx_##CHAR##BITS(v, kBits);                      \
+//   }                                                                \
+//   HWY_API HWY_SVE_V(BASE, BITS)                                    \
+//       NAME##Same(HWY_SVE_V(BASE, BITS) v, int bits) {              \
+//     return v##OP##_vx_##CHAR##BITS(v, static_cast<uint8_t>(bits)); \
+//   }
 
-// Intrinsics do not define .vi forms, so use .vx instead.
-#define HWY_SVE_SHIFT(BASE, CHAR, BITS, SUFF, NAME, OP)                  \
-  template <int kBits>                                             \
-  HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) v) {    \
-    return v##OP##_vx_##CHAR##BITS(v, kBits);                      \
-  }                                                                \
-  HWY_API HWY_SVE_V(BASE, BITS)                                    \
-      NAME##Same(HWY_SVE_V(BASE, BITS) v, int bits) {              \
-    return v##OP##_vx_##CHAR##BITS(v, static_cast<uint8_t>(bits)); \
-  }
+// HWY_SVE_FOREACH_UI(HWY_SVE_SHIFT, ShiftLeft, sll)
 
-HWY_SVE_FOREACH_UI(HWY_SVE_SHIFT, ShiftLeft, sll)
+// // ------------------------------ ShiftRight[Same]
 
-// ------------------------------ ShiftRight[Same]
+// HWY_SVE_FOREACH_U(HWY_SVE_SHIFT, ShiftRight, srl)
+// HWY_SVE_FOREACH_I(HWY_SVE_SHIFT, ShiftRight, sra)
 
-HWY_SVE_FOREACH_U(HWY_SVE_SHIFT, ShiftRight, srl)
-HWY_SVE_FOREACH_I(HWY_SVE_SHIFT, ShiftRight, sra)
+// #undef HWY_SVE_SHIFT
 
-#undef HWY_SVE_SHIFT
+// // ------------------------------ Shl
+// #define HWY_SVE_SHIFT_VV(BASE, CHAR, BITS, SUFF, NAME, OP)              \
+//   HWY_API HWY_SVE_V(BASE, BITS)                                   \
+//       NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_V(BASE, BITS) bits) { \
+//     return v##OP##_vv_##CHAR##BITS(v, bits);                      \
+//   }
 
-// ------------------------------ Shl
-#define HWY_SVE_SHIFT_VV(BASE, CHAR, BITS, SUFF, NAME, OP)              \
-  HWY_API HWY_SVE_V(BASE, BITS)                                   \
-      NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_V(BASE, BITS) bits) { \
-    return v##OP##_vv_##CHAR##BITS(v, bits);                      \
-  }
+// HWY_SVE_FOREACH_U(HWY_SVE_SHIFT_VV, Shl, sll)
 
-HWY_SVE_FOREACH_U(HWY_SVE_SHIFT_VV, Shl, sll)
+// #define HWY_SVE_SHIFT_II(BASE, CHAR, BITS, SUFF, NAME, OP)                    \
+//   HWY_API HWY_SVE_V(BASE, BITS)                                         \
+//       NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_V(BASE, BITS) bits) {       \
+//     return v##OP##_vv_##CHAR##BITS(v, detail::BitCastToUnsigned(bits)); \
+//   }
 
-#define HWY_SVE_SHIFT_II(BASE, CHAR, BITS, SUFF, NAME, OP)                    \
-  HWY_API HWY_SVE_V(BASE, BITS)                                         \
-      NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_V(BASE, BITS) bits) {       \
-    return v##OP##_vv_##CHAR##BITS(v, detail::BitCastToUnsigned(bits)); \
-  }
+// HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_II, Shl, sll)
 
-HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_II, Shl, sll)
+// // ------------------------------ Shr
 
-// ------------------------------ Shr
+// HWY_SVE_FOREACH_U(HWY_SVE_SHIFT_VV, Shr, srl)
+// HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_II, Shr, sra)
 
-HWY_SVE_FOREACH_U(HWY_SVE_SHIFT_VV, Shr, srl)
-HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_II, Shr, sra)
-
-#undef HWY_SVE_SHIFT_II
-#undef HWY_SVE_SHIFT_VV
+// #undef HWY_SVE_SHIFT_II
+// #undef HWY_SVE_SHIFT_VV
 
 // ------------------------------ Min
 
-HWY_SVE_FOREACH_U(HWY_SVE_RETV_ARGVV, Min, minu)
-HWY_SVE_FOREACH_I(HWY_SVE_RETV_ARGVV, Min, min)
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVV, Min, fmin)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGPVV, Min, min)
 
 // ------------------------------ Max
 
 namespace detail {
 
-HWY_SVE_FOREACH_U(HWY_SVE_RETV_ARGVS, Max, maxu_vx)
-HWY_SVE_FOREACH_I(HWY_SVE_RETV_ARGVS, Max, max_vx)
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVS, Max, fmax_vf)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGVS, Max, max)
 
 }  // namespace detail
 
-HWY_SVE_FOREACH_U(HWY_SVE_RETV_ARGVV, Max, maxu)
-HWY_SVE_FOREACH_I(HWY_SVE_RETV_ARGVV, Max, max)
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGVV, Max, fmax)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGPVV, Max, max)
 
 // ------------------------------ Mul
 
