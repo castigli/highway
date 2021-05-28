@@ -214,22 +214,22 @@ namespace detail {
 
 // Other integers
 #define HWY_SVE_CAST_UI(BASE, CHAR, BITS, SUFF, NAME, OP)                   \
-  HWY_API vuint8m##_t BitCastToByte(HWY_SVE_V(BASE, BITS) v) {        \
-    return v##OP##_v_##CHAR##BITS##_u8m(v);                           \
+  HWY_API svuint8##_t BitCastToByte(HWY_SVE_V(BASE, BITS) v) {        \
+    return sv##OP##_u8_##CHAR##BITS(v);                           \
   }                                                                   \
   HWY_API HWY_SVE_V(BASE, BITS)                                       \
-      BitCastFromByte(HWY_SVE_D(CHAR, BITS) /* d */, vuint8m##_t v) { \
-    return v##OP##_v_u8m##_##CHAR##BITS(v);                           \
+      BitCastFromByte(HWY_SVE_D(CHAR, BITS) /* d */, svuint8##_t v) { \
+    return sv##OP##_##CHAR##BITS(v);                           \
   }
 
 // Float: first cast to/from unsigned
 #define HWY_SVE_CAST_F(BASE, CHAR, BITS, SUFF, NAME, OP)                    \
-  HWY_API vuint8m##_t BitCastToByte(HWY_SVE_V(BASE, BITS) v) {        \
-    return v##OP##_v_u##BITS##_u8m(v##OP##_v_f##BITS##_u##BITS(v));   \
+  HWY_API svuint8##_t BitCastToByte(HWY_SVE_V(BASE, BITS) v) {        \
+    return sv##OP##_u8(sv##OP##_u##BITS##_f##BITS(v));   \
   }                                                                   \
   HWY_API HWY_SVE_V(BASE, BITS)                                       \
-      BitCastFromByte(HWY_SVE_D(CHAR, BITS) /* d */, vuint8m##_t v) { \
-    return v##OP##_v_u##BITS##_f##BITS(v##OP##_v_u8m##_u##BITS(v));   \
+      BitCastFromByte(HWY_SVE_D(CHAR, BITS) /* d */, svuint8##_t v) { \
+    return sv##OP##_f##BITS##_u##BITS(sv##OP##_u##BITS(v));   \
   }
 
 HWY_SVE_FOREACH_U08(HWY_SVE_CAST_NOP, _, _)
